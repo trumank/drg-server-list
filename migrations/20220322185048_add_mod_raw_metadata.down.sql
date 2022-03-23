@@ -1,0 +1,1 @@
+ALTER TABLE mod DROP COLUMN metadata;
