@@ -99,7 +99,7 @@ struct ServerListSettings {
     #[serde(rename = "dRG_REGION")]
     region: String,
     #[serde(rename = "dRG_VERSION")]
-    version: i32,
+    version: Option<i32>,
     #[serde(rename = "difficultyBitset")]
     difficulty_bitset: i32,
     #[serde(rename = "missionSeed")]
@@ -259,7 +259,7 @@ async fn get_server_list(difficulty_bitset: u8) -> Result<ServerList> {
         distance: 3,
         password_required: 0,
         region: "".into(),
-        version: 67712,
+        version: None,
         difficulty_bitset: difficulty_bitset as i32,
         mission_seed: 0,
         global_mission_seed: 0,
