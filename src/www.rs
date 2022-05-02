@@ -83,11 +83,10 @@ async fn get_servers(conn: Conn) -> Conn {
                     AND server_mod.lobby_id = server.lobby_id
                     AND category != 0
                 ORDER BY category)
-            ) AS mods
+            ) AS "mods?: String"
             FROM server
-            WHERE diff = 4
-            ORDER BY time
-            DESC LIMIT 1000;
+            WHERE diff = 4 AND server.time > strftime('%s', datetime('now', '-1 hours'))
+            ORDER BY time;
         "#
     )
     .fetch_all(pool)

@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-sqlx = { version = "0.5", features = [  "runtime-tokio-rustls", "sqlite", "json" ] }
+sqlx = { version = "0.5.13", features = [  "runtime-tokio-rustls", "sqlite", "json" ] }
 reqwest = { version = "0.11.10", features = [ "json" ] }
 serde_json = { version = "1.0.79", features = [ "raw_value" ] }
 serde = { version = "1.0.136", features = ["derive"] }
@@ -20,3 +20,5 @@ trillium-router = "0.3.2"
 trillium-logger = "0.4.0"
 anyhow = { version = "1.0.56", features = [ "backtrace" ] }
 clap = "3.1.6"
+lazy_static = "1.4.0"
+regex = "1.5.5"
