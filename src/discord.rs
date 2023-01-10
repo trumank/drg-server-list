@@ -185,7 +185,21 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
                 FROM server
                 JOIN server_mod USING(time, lobby_id)
                 WHERE
-                    mod_id IN (1861561, 1897251, 1034406, 1775635, 1137703, 1137738, 1143817, 1729804, 1703369, 1137776, 1727230)
+                    mod_id IN (
+                        1861561,
+                        1897251,
+                        1775635,
+                        1137703,
+                        1137738,
+                        1143817,
+                        1729804,
+                        1703369,
+                        1137776,
+                        1727230,
+                        1981468, -- More Mutators
+                        1962912, -- Buyable Missions
+                        2093114 -- Mission Randomizer
+                    )
                     AND (server.time, server.lobby_id) NOT IN (
                         SELECT MAX(time), lobby_id
                         FROM server_mod
