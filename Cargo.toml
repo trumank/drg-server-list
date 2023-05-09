@@ -1,5 +1,5 @@
 [package]
-name = "server-list"
+name = "drg-server-list"
 version = "0.1.0"
 edition = "2021"
 
