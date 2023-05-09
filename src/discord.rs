@@ -225,7 +225,15 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
     .fetch_all(pool)
     .await.unwrap();
 
+    let filter = std::env::var("SERVER_NAME_FILTER");
     for server in res {
+        if let Ok(filter) = &filter {
+            let name_lower = server.server_name.to_lowercase();
+            if filter.split_whitespace().any(|f| name_lower.contains(f)) {
+                continue;
+            }
+        }
+
         let mods = server.mods.map_or_else(|| Ok(vec![]), |m| {
             serde_json::from_str::<Vec<Mod>>(&m)
         }).unwrap();
