@@ -50,6 +50,10 @@ async fn main() -> Result<()> {
 
     let pool = SqlitePool::connect(&env::var("DATABASE_URL")?).await?;
 
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await?;
+
     let time: i64 = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs().try_into().unwrap();
 
     println!("{}", time);
