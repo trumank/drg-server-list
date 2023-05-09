@@ -1,0 +1,307 @@
+{
+  "db": "SQLite",
+  "06dc067982f8becc3ea28d9f27469bae3b3043dfe5d61f8365cb4580ca541d64": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "INSERT INTO discord_message(message_id, lobby_id, last_updated) VALUES (?, ?, strftime('%s', 'now')) ON CONFLICT(message_id) DO UPDATE SET last_updated = excluded.last_updated;"
+  },
+  "193a9325a80483f5efb1d779bad38ee6b7dc64cb1a48aa3fb4bc5b8a8e4155f4": {
+    "describe": {
+      "columns": [
+        {
+          "name": "mod_id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT mod_id FROM mod WHERE metadata IS NULL"
+  },
+  "19b460360c537af01e7c6a2f618b8a62b94ed3e04a1df96a6d3a8360e1797cb1": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM discord_message WHERE message_id = ?"
+  },
+  "33fa21f27294c4f52f5d67cdd5a456ebb0d4990a71d015ec0400ac38eacc58a6": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 5
+      }
+    },
+    "query": "\nINSERT INTO server_mod (\n    time,\n    lobby_id,\n    mod_id,\n    version,\n    category\n)\nVALUES ( ?, ?, ?, ?, ? )\n        "
+  },
+  "4cdd25be7fa66bd56f808cde3691ff5cfdd595804f44791c39f663b074797fb7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "time",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "time_formatted!: String",
+          "ordinal": 1,
+          "type_info": "Null"
+        },
+        {
+          "name": "lobby_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "diff",
+          "ordinal": 3,
+          "type_info": "Int64"
+        },
+        {
+          "name": "region",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "host_user_id",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "server_name",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "mods?: String",
+          "ordinal": 7,
+          "type_info": "Null"
+        }
+      ],
+      "nullable": [
+        false,
+        null,
+        false,
+        false,
+        false,
+        false,
+        false,
+        null
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT time,\n            datetime(time, 'unixepoch', 'localtime') AS \"time_formatted!: String\",\n            lobby_id,\n            diff,\n            region,\n            host_user_id,\n            server_name,\n            (SELECT json_group_array(json_object('id', mod_id, 'category', category, 'name', name, 'url', url)) FROM\n                (SELECT mod_id, category, name, url\n                FROM server_mod\n                JOIN mod USING(mod_id)\n                WHERE\n                    server_mod.time = server.time\n                    AND server_mod.lobby_id = server.lobby_id\n                    AND category != 0\n                ORDER BY category)\n            ) AS \"mods?: String\"\n            FROM server\n            WHERE diff = 4 AND server.time > strftime('%s', datetime('now', '-1 hours'))\n            ORDER BY time;\n        "
+  },
+  "4e5a433d10442daba3d63cf36dc2eeadcc94a845d023e29662ac75f1586dbfa6": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "INSERT OR IGNORE INTO mod (mod_id) VALUES ( ? )"
+  },
+  "530ea17c3b0144f48a39e3be5ffd4581f6e4b11b024c6cad0eecd6ec8fad6bc7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "message_id",
+          "ordinal": 0,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT message_id\n            FROM discord_message\n            WHERE last_updated <= strftime('%s', datetime('now', '-10 minutes'))\n        "
+  },
+  "92e0b8e8612857e787f11218cc0687733f979d1aaa740dfe6f4dd8a39bc452e0": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 20
+      }
+    },
+    "query": "\nINSERT INTO server (\n    time,\n    lobby_id,\n    host_user_id,\n    server_name,\n    server_name_san,\n    global_mission_seed,\n    mission_seed,\n    diff,\n    gamestate,\n    numplayers,\n    full,\n    region,\n    start,\n    classes,\n    classlock,\n    mission_structure,\n    password,\n    p2paddress,\n    p2pport,\n    distance\n)\nVALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )\n        "
+  },
+  "99810d567d3d9f0b20611aaf0904c1005916cf2619a408a544f60342859fe2f3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "time",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "time_formatted!: String",
+          "ordinal": 1,
+          "type_info": "Null"
+        },
+        {
+          "name": "lobby_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "diff",
+          "ordinal": 3,
+          "type_info": "Int64"
+        },
+        {
+          "name": "region",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "host_user_id",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "server_name",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "mods?: String",
+          "ordinal": 7,
+          "type_info": "Null"
+        }
+      ],
+      "nullable": [
+        false,
+        null,
+        false,
+        false,
+        false,
+        false,
+        false,
+        null
+      ],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "SELECT time,\n            datetime(time, 'unixepoch', 'localtime') AS \"time_formatted!: String\",\n            lobby_id,\n            diff,\n            region,\n            host_user_id,\n            server_name,\n            (SELECT json_group_array(json_object('id', mod_id, 'category', category, 'name', name, 'url', url)) FROM\n                (SELECT mod_id, category, name, url\n                FROM server_mod\n                JOIN mod USING(mod_id)\n                WHERE\n                    server_mod.time = server.time\n                    AND server_mod.lobby_id = server.lobby_id\n                    AND category != 0\n                ORDER BY category)\n            ) AS \"mods?: String\"\n            FROM server\n            WHERE server.time = ? AND server.lobby_id = ?\n            ORDER BY time\n        "
+  },
+  "b78e531605ecdad8f90b69f540bf5a7188a023e1e5a2d0ee84416ae13c5d4591": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "INSERT OR IGNORE INTO mod (mod_id) SELECT mod_id FROM server_mod WHERE mod_id IS NOT NULL"
+  },
+  "cfc0825e35dce3200e512b651afa3ad370217c46366c09dcb69e7d304b23c5e7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "time",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "time_formatted!: String",
+          "ordinal": 1,
+          "type_info": "Null"
+        },
+        {
+          "name": "lobby_id",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "diff",
+          "ordinal": 3,
+          "type_info": "Int64"
+        },
+        {
+          "name": "region",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "host_user_id",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "server_name",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "classes",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "start",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "mods?: String",
+          "ordinal": 9,
+          "type_info": "Null"
+        },
+        {
+          "name": "message_id?",
+          "ordinal": 10,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        null,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        null,
+        false
+      ],
+      "parameters": {
+        "Right": 0
+      }
+    },
+    "query": "SELECT time,\n            datetime(time, 'unixepoch', 'localtime') AS \"time_formatted!: String\",\n            lobby_id,\n            diff,\n            region,\n            host_user_id,\n            server_name,\n            classes,\n            start,\n            (SELECT json_group_array(json_object('id', mod_id, 'category', category, 'name', name, 'url', url)) FROM\n                (SELECT mod_id, category, name, url\n                FROM server_mod\n                JOIN mod USING(mod_id)\n                WHERE\n                    server_mod.time = server.time\n                    AND server_mod.lobby_id = server.lobby_id\n                ORDER BY category)\n            ) AS \"mods?: String\",\n            (SELECT message_id FROM discord_message WHERE server.lobby_id = discord_message.lobby_id) AS \"message_id?\" -- use subquery because sqlx can't handle left join\n            FROM server\n            WHERE (server.time, server.lobby_id) IN (\n                SELECT time, lobby_id\n                FROM server\n                JOIN server_mod USING(time, lobby_id)\n                WHERE\n                    mod_id IN (\n                        1861561,\n                        1897251,\n                        1775635,\n                        1137703,\n                        1137738,\n                        1143817,\n                        1729804,\n                        1703369,\n                        1137776,\n                        1727230,\n                        1981468, -- More Mutators\n                        1962912, -- Buyable Missions\n                        2093114 -- Mission Randomizer\n                    )\n                    AND (server.time, server.lobby_id) NOT IN (\n                        SELECT MAX(time), lobby_id\n                        FROM server_mod\n                        WHERE mod_id IN (\n                            1034411, -- 2x flashlight\n                            1034683, -- 3x flashlight\n                            1034060, -- 5x flashlight\n                            1176984, -- better minigun\n                            1159061 -- better scout\n                        )\n                        GROUP BY lobby_id\n                    )\n                    AND lower(server.server_name) NOT LIKE '%nigger%'\n                    AND lower(server.server_name) NOT LIKE '%faggot%'\n                    AND (server.time, server.lobby_id) IN (\n                        SELECT MAX(time), lobby_id\n                        FROM server\n                        WHERE time > strftime('%s', datetime('now', '-10 minutes'))\n                        GROUP BY lobby_id\n                    )\n            )\n            ORDER BY time\n        "
+  },
+  "fc26ad588e36a449abe2963e2ae4cb6b7b8523bf23e5f7ccd51ff716d33bb830": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 4
+      }
+    },
+    "query": "UPDATE mod SET name = ?, url = ?, metadata = ? WHERE mod_id = ?"
+  }
+}
