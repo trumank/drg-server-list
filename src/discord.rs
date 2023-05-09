@@ -197,8 +197,8 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
                         1137776,
                         1727230,
                         1981468, -- More Mutators
-                        1962912, -- Buyable Missions
-                        2093114 -- Mission Randomizer
+                        1962912 -- Buyable Missions
+                        -- 2093114 -- Mission Randomizer
                     )
                     AND (server.time, server.lobby_id) NOT IN (
                         SELECT MAX(time), lobby_id
