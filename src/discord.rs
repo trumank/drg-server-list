@@ -192,6 +192,7 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
                         SELECT MAX(time), lobby_id
                         FROM server_mod
                         WHERE mod_id IN (
+                            2093114, -- Mission Content Randomizer
                             1034411, -- 2x flashlight
                             1034683, -- 3x flashlight
                             1034060, -- 5x flashlight
