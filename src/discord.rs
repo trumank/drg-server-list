@@ -1,5 +1,5 @@
-use sqlx::sqlite::SqlitePool;
 use serde::{Deserialize, Serialize};
+use sqlx::sqlite::SqlitePool;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -88,7 +88,10 @@ pub struct SteamPlayer {
 
 fn format_mod_field(mods: &Vec<Mod>, category: i32, name: &str) -> Option<WebhookField> {
     let mut value = String::with_capacity(1000);
-    let filtered_mods: Vec<&Mod> = mods.iter().filter(|m| m.category == Some(category)).collect();
+    let filtered_mods: Vec<&Mod> = mods
+        .iter()
+        .filter(|m| m.category == Some(category))
+        .collect();
     // TODO: Very messy and probably broken
     for (i, m) in filtered_mods.iter().enumerate() {
         let formatted = if let (Some(url), Some(name)) = (m.url.as_ref(), m.name.as_ref()) {
@@ -118,7 +121,8 @@ fn format_classes(classes: &String) -> String {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"\d+;").unwrap();
     }
-    let mut vec: Vec<&str> = RE.find_iter(&classes)
+    let mut vec: Vec<&str> = RE
+        .find_iter(&classes)
         .map(|c| match c.as_str() {
             "0;" => "<:driller:964680901621612584>",
             "1;" => "<:engineer:964680922920255548>",
@@ -144,8 +148,15 @@ pub async fn parse_response<T: serde::de::DeserializeOwned>(res: reqwest::Respon
 pub async fn ratelimit_sleep(res: &reqwest::Response) {
     let headers = res.headers();
     if let (Some(remaining), Some(reset)) = (
-        headers.get("x-ratelimit-remaining").and_then(|v| v.to_str().ok()).and_then(|s| s.parse::<i32>().ok()),
-        headers.get("x-ratelimit-reset-after").and_then(|v| v.to_str().ok()).and_then(|s| s.parse::<f32>().ok())) {
+        headers
+            .get("x-ratelimit-remaining")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.parse::<i32>().ok()),
+        headers
+            .get("x-ratelimit-reset-after")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.parse::<f32>().ok()),
+    ) {
         if remaining == 0 {
             println!("Sleeping for: {}", reset);
             tokio::time::sleep(tokio::time::Duration::from_secs_f32(reset)).await;
@@ -223,9 +234,10 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
             }
         }
 
-        let mods = server.mods.map_or_else(|| Ok(vec![]), |m| {
-            serde_json::from_str::<Vec<Mod>>(&m)
-        }).unwrap();
+        let mods = server
+            .mods
+            .map_or_else(|| Ok(vec![]), |m| serde_json::from_str::<Vec<Mod>>(&m))
+            .unwrap();
 
         let mut fields = vec![
             WebhookField {
@@ -245,7 +257,11 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
             },
             WebhookField {
                 name: "Status".to_string(),
-                value: (if server.start.is_empty() { "In Space Rig".to_string() } else { "In Mission".to_string() }),
+                value: (if server.start.is_empty() {
+                    "In Space Rig".to_string()
+                } else {
+                    "In Mission".to_string()
+                }),
                 inline: false,
             },
             /*WebhookField {
@@ -255,9 +271,15 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
             },*/
         ];
 
-        if let Some(field) = format_mod_field(&mods, 0, "Verified Mods") { fields.push(field) }
-        if let Some(field) = format_mod_field(&mods, 1, "Approved Mods") { fields.push(field) }
-        if let Some(field) = format_mod_field(&mods, 2, "Sandboxed Mods") { fields.push(field) }
+        if let Some(field) = format_mod_field(&mods, 0, "Verified Mods") {
+            fields.push(field)
+        }
+        if let Some(field) = format_mod_field(&mods, 1, "Approved Mods") {
+            fields.push(field)
+        }
+        if let Some(field) = format_mod_field(&mods, 2, "Sandboxed Mods") {
+            fields.push(field)
+        }
 
         let result: SteamPlayerRequest = parse_response(reqwest::Client::new()
                 .get(format!("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={}&steamids={}", steam_key, server.host_user_id))
@@ -288,29 +310,36 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
         while !success {
             let client = reqwest::Client::new();
             let res = if let Some(message) = &server.message_id {
-                    client.patch(format!("{}/messages/{}?wait=true", webhook, message))
-                } else {
-                    client.post(format!("{}?wait=true", webhook))
-                }
-                .json(&data)
-                .send()
-                .await?;
+                client.patch(format!("{}/messages/{}?wait=true", webhook, message))
+            } else {
+                client.post(format!("{}?wait=true", webhook))
+            }
+            .json(&data)
+            .send()
+            .await?;
             ratelimit_sleep(&res).await;
 
             let result: WebhookResponse = parse_response(res).await?;
 
             match result {
-                WebhookResponse::Success{id} => {
+                WebhookResponse::Success { id } => {
                     sqlx::query!("INSERT INTO discord_message(message_id, lobby_id, last_updated) VALUES (?, ?, strftime('%s', 'now')) ON CONFLICT(message_id) DO UPDATE SET last_updated = excluded.last_updated;", id, server.lobby_id)
                         .execute(pool)
                         .await?;
                     success = true;
-                },
-                WebhookResponse::Ratelimit{message, global, retry_after} => {
-                    println!("{}; global: {}, retry_after: {}", message, global, retry_after);
+                }
+                WebhookResponse::Ratelimit {
+                    message,
+                    global,
+                    retry_after,
+                } => {
+                    println!(
+                        "{}; global: {}, retry_after: {}",
+                        message, global, retry_after
+                    );
                     tokio::time::sleep(tokio::time::Duration::from_secs_f32(retry_after)).await;
-                },
-                WebhookResponse::Error{message, code} => {
+                }
+                WebhookResponse::Error { message, code } => {
                     if code == 10008 {
                         if let Some(id) = &server.message_id {
                             println!("Tried to update unknown message. Deleting...");
@@ -322,7 +351,7 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
                         println!("Received error from endpoint: {} code: {}", message, code);
                     }
                     success = true;
-                },
+                }
             }
         }
     }
@@ -334,7 +363,8 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
         "#,
     )
     .fetch_all(pool)
-    .await.unwrap();
+    .await
+    .unwrap();
 
     for message in res {
         let res = reqwest::Client::new()
@@ -343,9 +373,12 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
             .await?;
         ratelimit_sleep(&res).await;
 
-        sqlx::query!("DELETE FROM discord_message WHERE message_id = ?", message.message_id)
-            .execute(pool)
-            .await?;
+        sqlx::query!(
+            "DELETE FROM discord_message WHERE message_id = ?",
+            message.message_id
+        )
+        .execute(pool)
+        .await?;
     }
 
     Ok(())

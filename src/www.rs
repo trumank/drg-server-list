@@ -1,17 +1,16 @@
-use sqlx::sqlite::SqlitePool;
 use serde::{Deserialize, Serialize};
+use sqlx::sqlite::SqlitePool;
 
 use anyhow::Result;
 
-use trillium::{conn_unwrap, Conn, State, Handler};
+use maud::{html, PreEscaped, DOCTYPE};
+use trillium::{conn_unwrap, Conn, Handler, State};
 use trillium_logger::Logger;
 use trillium_router::{Router, RouterConnExt};
 use trillium_static_compiled::static_compiled;
-use maud::{DOCTYPE, html, PreEscaped};
 
-pub async fn run_web_server() -> Result<()>{
-    trillium_tokio::config()
-        .run_async(app()).await;
+pub async fn run_web_server() -> Result<()> {
+    trillium_tokio::config().run_async(app()).await;
     Ok(())
 }
 
@@ -92,18 +91,22 @@ async fn get_servers(conn: Conn) -> Conn {
     .fetch_all(pool)
     .await.unwrap();
 
-    let servers: Vec<Server> = res.into_iter().map(|r| Server {
-        time: r.time,
-        time_formatted: r.time_formatted,
-        lobby_id: r.lobby_id,
-        difficulty: r.diff,
-        region: r.region,
-        host_user_id: r.host_user_id,
-        server_name: r.server_name,
-        mods: r.mods.map_or_else(|| Ok(vec![]), |m| {
-            serde_json::from_str::<Vec<Mod>>(&m)
-        }).unwrap()
-    }).collect();
+    let servers: Vec<Server> = res
+        .into_iter()
+        .map(|r| Server {
+            time: r.time,
+            time_formatted: r.time_formatted,
+            lobby_id: r.lobby_id,
+            difficulty: r.diff,
+            region: r.region,
+            host_user_id: r.host_user_id,
+            server_name: r.server_name,
+            mods: r
+                .mods
+                .map_or_else(|| Ok(vec![]), |m| serde_json::from_str::<Vec<Mod>>(&m))
+                .unwrap(),
+        })
+        .collect();
 
     conn.render(render_servers(servers))
 }
@@ -140,18 +143,22 @@ async fn get_server(conn: Conn) -> Conn {
     .fetch_all(pool)
     .await.unwrap();
 
-    let servers: Vec<Server> = res.into_iter().map(|r| Server {
-        time: r.time,
-        time_formatted: r.time_formatted,
-        lobby_id: r.lobby_id,
-        difficulty: r.diff,
-        region: r.region,
-        host_user_id: r.host_user_id,
-        server_name: r.server_name,
-        mods: r.mods.map_or_else(|| Ok(vec![]), |m| {
-            serde_json::from_str::<Vec<Mod>>(&m)
-        }).unwrap()
-    }).collect();
+    let servers: Vec<Server> = res
+        .into_iter()
+        .map(|r| Server {
+            time: r.time,
+            time_formatted: r.time_formatted,
+            lobby_id: r.lobby_id,
+            difficulty: r.diff,
+            region: r.region,
+            host_user_id: r.host_user_id,
+            server_name: r.server_name,
+            mods: r
+                .mods
+                .map_or_else(|| Ok(vec![]), |m| serde_json::from_str::<Vec<Mod>>(&m))
+                .unwrap(),
+        })
+        .collect();
 
     conn.render(render_servers(servers))
 }

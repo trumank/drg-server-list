@@ -1,17 +1,17 @@
 #![feature(iter_intersperse)]
-use sqlx::sqlite::SqlitePool;
 use dotenv::dotenv;
+use sqlx::sqlite::SqlitePool;
 
 use clap::Parser;
 
 use anyhow::Result;
 
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::env;
+use std::time::{SystemTime, UNIX_EPOCH};
 
-mod www;
-mod poll;
 mod discord;
+mod poll;
+mod www;
 
 #[derive(Parser, Clone)]
 struct Config {
@@ -40,11 +40,14 @@ async fn main() -> Result<()> {
 
     let pool = SqlitePool::connect(&env::var("DATABASE_URL")?).await?;
 
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await?;
+    sqlx::migrate!("./migrations").run(&pool).await?;
 
-    let time: i64 = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs().try_into().unwrap();
+    let time: i64 = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        .try_into()
+        .unwrap();
 
     println!("{}", time);
 
@@ -64,4 +67,3 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
-

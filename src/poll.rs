@@ -1,9 +1,9 @@
 use anyhow::Result;
 
-use sqlx::sqlite::SqlitePool;
+use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
-use reqwest;
+use sqlx::sqlite::SqlitePool;
 
 #[derive(Debug, Deserialize)]
 struct ModIoBatchResponse<'a> {
@@ -25,13 +25,13 @@ struct ModIoMod {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Server {
-    #[serde(rename ="Id")]
+    #[serde(rename = "Id")]
     id: String,
-    #[serde(rename ="HostUserID")]
+    #[serde(rename = "HostUserID")]
     host_user_id: String,
-    #[serde(rename ="DRG_SERVERNAME")]
+    #[serde(rename = "DRG_SERVERNAME")]
     server_name: String,
-    #[serde(rename ="DRG_SERVERNAME_SAN")]
+    #[serde(rename = "DRG_SERVERNAME_SAN")]
     server_name_san: String,
     #[serde(rename = "DRG_GLOBALMISSION_SEED")]
     global_mission_seed: i64,
@@ -70,7 +70,7 @@ struct Server {
 #[derive(Debug, Serialize, Deserialize)]
 struct ServerList {
     #[serde(rename = "Lobbies")]
-    lobbies: Vec<Server>
+    lobbies: Vec<Server>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -116,11 +116,21 @@ struct ServerListSettings {
 pub async fn update_server_list(pool: &SqlitePool, time: i64) -> Result<()> {
     let mut servers = std::collections::HashMap::<String, Server>::new();
 
-    for server in get_server_list(0b00001).await?.lobbies { servers.insert(server.id.to_owned(), server); }
-    for server in get_server_list(0b00010).await?.lobbies { servers.insert(server.id.to_owned(), server); }
-    for server in get_server_list(0b00100).await?.lobbies { servers.insert(server.id.to_owned(), server); }
-    for server in get_server_list(0b01000).await?.lobbies { servers.insert(server.id.to_owned(), server); }
-    for server in get_server_list(0b10000).await?.lobbies { servers.insert(server.id.to_owned(), server); }
+    for server in get_server_list(0b00001).await?.lobbies {
+        servers.insert(server.id.to_owned(), server);
+    }
+    for server in get_server_list(0b00010).await?.lobbies {
+        servers.insert(server.id.to_owned(), server);
+    }
+    for server in get_server_list(0b00100).await?.lobbies {
+        servers.insert(server.id.to_owned(), server);
+    }
+    for server in get_server_list(0b01000).await?.lobbies {
+        servers.insert(server.id.to_owned(), server);
+    }
+    for server in get_server_list(0b10000).await?.lobbies {
+        servers.insert(server.id.to_owned(), server);
+    }
 
     for (_, server) in &servers {
         insert_server(pool, time, server).await?;
@@ -129,31 +139,43 @@ pub async fn update_server_list(pool: &SqlitePool, time: i64) -> Result<()> {
 }
 
 pub async fn update_mods(pool: &SqlitePool) -> Result<()> {
-    sqlx::query!("INSERT OR IGNORE INTO mod (mod_id) SELECT mod_id FROM server_mod WHERE mod_id IS NOT NULL").execute(pool).await?;
+    sqlx::query!(
+        "INSERT OR IGNORE INTO mod (mod_id) SELECT mod_id FROM server_mod WHERE mod_id IS NOT NULL"
+    )
+    .execute(pool)
+    .await?;
 
-    let mod_ids = sqlx::query!("SELECT mod_id FROM mod WHERE metadata IS NULL").fetch_all(pool).await?;
-    let id_query: String = mod_ids.into_iter().map(|res| res.mod_id.to_string()).intersperse(",".into()).collect();
-
-    let url = format!("https://api.mod.io/v1/games/2475/mods?api_key={}&id-in={}", &std::env::var("MODIO_KEY")?, id_query);
-
-    let body = reqwest::get(url)
-        .await?
-        .text()
+    let mod_ids = sqlx::query!("SELECT mod_id FROM mod WHERE metadata IS NULL")
+        .fetch_all(pool)
         .await?;
+    let id_query: String = mod_ids
+        .into_iter()
+        .map(|res| res.mod_id.to_string())
+        .intersperse(",".into())
+        .collect();
+
+    let url = format!(
+        "https://api.mod.io/v1/games/2475/mods?api_key={}&id-in={}",
+        &std::env::var("MODIO_KEY")?,
+        id_query
+    );
+
+    let body = reqwest::get(url).await?.text().await?;
 
     let result: ModIoBatchResponse = serde_json::from_str(&body)?;
 
     for raw in result.data {
         let metadata = serde_json::to_string(raw)?;
         let m: ModIoMod = serde_json::from_str(raw.get())?;
-        sqlx::query!("UPDATE mod SET name = ?, url = ?, metadata = ? WHERE mod_id = ?",
-                m.name,
-                m.profile_url,
-                metadata,
-                m.id,
-            )
-            .execute(pool)
-            .await?;
+        sqlx::query!(
+            "UPDATE mod SET name = ?, url = ?, metadata = ? WHERE mod_id = ?",
+            m.name,
+            m.profile_url,
+            metadata,
+            m.id,
+        )
+        .execute(pool)
+        .await?;
     }
 
     Ok(())
@@ -219,8 +241,12 @@ VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
     Ok(())
 }
 
-async fn insert_server_mod(pool: &SqlitePool, time: i64, server: &Server, m: &ServerMod) -> Result<()> {
-
+async fn insert_server_mod(
+    pool: &SqlitePool,
+    time: i64,
+    server: &Server,
+    m: &ServerMod,
+) -> Result<()> {
     if let Err(..) = &m.name.parse::<i64>() {
         println!("Mod has non-numeric ID: {}", m.name);
         return Ok(());
@@ -245,7 +271,9 @@ VALUES ( ?, ?, ?, ?, ? )
     )
     .execute(pool)
     .await?;
-    sqlx::query!("INSERT OR IGNORE INTO mod (mod_id) VALUES ( ? )", m.name).execute(pool).await?;
+    sqlx::query!("INSERT OR IGNORE INTO mod (mod_id) VALUES ( ? )", m.name)
+        .execute(pool)
+        .await?;
     Ok(())
 }
 
@@ -253,7 +281,7 @@ async fn get_server_list(difficulty_bitset: u8) -> Result<ServerList> {
     let settings = ServerListSettings {
         steam_ticket: "".into(),
         steam_ping_loc: "".into(),
-        game_types: [1,2,0,99].to_vec(),
+        game_types: [1, 2, 0, 99].to_vec(),
         authentication_ticket: "OtherPlatform".into(),
         ignore_id: "".into(),
         distance: 3,
