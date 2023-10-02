@@ -9,6 +9,7 @@ use trillium_logger::Logger;
 use trillium_router::{Router, RouterConnExt};
 use trillium_static_compiled::static_compiled;
 
+#[tracing::instrument(skip_all)]
 pub async fn run_web_server() -> Result<()> {
     trillium_tokio::config().run_async(app()).await;
     Ok(())

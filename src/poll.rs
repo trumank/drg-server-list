@@ -4,6 +4,7 @@ use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
 use sqlx::sqlite::SqlitePool;
+use tracing::{info, warn};
 
 #[derive(Debug, Deserialize)]
 struct ModIoBatchResponse<'a> {
@@ -113,6 +114,7 @@ struct ServerListSettings {
     platform: String,
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn update_server_list(pool: &SqlitePool, time: i64) -> Result<()> {
     let mut servers = std::collections::HashMap::<String, Server>::new();
 
@@ -138,6 +140,7 @@ pub async fn update_server_list(pool: &SqlitePool, time: i64) -> Result<()> {
     Ok(())
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn update_mods(pool: &SqlitePool) -> Result<()> {
     sqlx::query!(
         "INSERT OR IGNORE INTO mod (mod_id) SELECT mod_id FROM server_mod WHERE mod_id IS NOT NULL"
@@ -181,6 +184,7 @@ pub async fn update_mods(pool: &SqlitePool) -> Result<()> {
     Ok(())
 }
 
+#[tracing::instrument(skip(pool, server), fields(server.id = server.id, server.name = server.server_name))]
 async fn insert_server(pool: &SqlitePool, time: i64, server: &Server) -> Result<()> {
     sqlx::query!(
         r#"
@@ -241,6 +245,7 @@ VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
     Ok(())
 }
 
+#[tracing::instrument(skip(pool, time, server))]
 async fn insert_server_mod(
     pool: &SqlitePool,
     time: i64,
@@ -248,7 +253,7 @@ async fn insert_server_mod(
     m: &ServerMod,
 ) -> Result<()> {
     if let Err(..) = &m.name.parse::<i64>() {
-        println!("Mod has non-numeric ID: {}", m.name);
+        warn!("Mod has non-numeric ID: {m:?}");
         return Ok(());
     }
 
@@ -277,7 +282,10 @@ VALUES ( ?, ?, ?, ?, ? )
     Ok(())
 }
 
+#[tracing::instrument]
 async fn get_server_list(difficulty_bitset: u8) -> Result<ServerList> {
+    info!("fetching server list");
+
     let settings = ServerListSettings {
         steam_ticket: "".into(),
         steam_ping_loc: "".into(),

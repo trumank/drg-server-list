@@ -5,6 +5,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 
 use anyhow::{anyhow, Result};
+use tracing::{info, warn};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Mod {
@@ -158,14 +159,15 @@ pub async fn ratelimit_sleep(res: &reqwest::Response) {
             .and_then(|s| s.parse::<f32>().ok()),
     ) {
         if remaining == 0 {
-            println!("Sleeping for: {}", reset);
+            info!("Sleeping for: {}", reset);
             tokio::time::sleep(tokio::time::Duration::from_secs_f32(reset)).await;
         } else {
-            println!("Requests remaining: {}", remaining);
+            info!("Requests remaining: {}", remaining);
         }
     }
 }
 
+#[tracing::instrument(skip_all)]
 pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
     let webhook = &std::env::var("DISCORD_WEBHOOK").unwrap();
     let steam_key = &std::env::var("STEAM_WEB_KEY").unwrap();
@@ -333,7 +335,7 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
                     global,
                     retry_after,
                 } => {
-                    println!(
+                    info!(
                         "{}; global: {}, retry_after: {}",
                         message, global, retry_after
                     );
@@ -342,13 +344,13 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
                 WebhookResponse::Error { message, code } => {
                     if code == 10008 {
                         if let Some(id) = &server.message_id {
-                            println!("Tried to update unknown message. Deleting...");
+                            warn!("Tried to update unknown message. Deleting...");
                             sqlx::query!("DELETE FROM discord_message WHERE message_id = ?", id)
                                 .execute(pool)
                                 .await?;
                         }
                     } else {
-                        println!("Received error from endpoint: {} code: {}", message, code);
+                        warn!("Received error from endpoint: {} code: {}", message, code);
                     }
                     success = true;
                 }

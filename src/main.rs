@@ -5,6 +5,7 @@ use sqlx::sqlite::SqlitePool;
 use clap::Parser;
 
 use anyhow::Result;
+use tracing::info;
 
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -36,6 +37,11 @@ struct Config {
 async fn main() -> Result<()> {
     dotenv().ok();
 
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .with_target(true)
+        .init();
+
     let config = Config::parse();
 
     let pool = SqlitePool::connect(&env::var("DATABASE_URL")?).await?;
@@ -49,7 +55,7 @@ async fn main() -> Result<()> {
         .try_into()
         .unwrap();
 
-    println!("{}", time);
+    info!("polling start {}", time);
 
     if config.poll_servers {
         self::poll::update_server_list(&pool, time).await?;
