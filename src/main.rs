@@ -2,7 +2,7 @@
 use sqlx::sqlite::SqlitePool;
 use dotenv::dotenv;
 
-use clap::arg;
+use clap::Parser;
 
 use anyhow::Result;
 
@@ -13,11 +13,22 @@ mod www;
 mod poll;
 mod discord;
 
-#[derive(Clone, Copy)]
+#[derive(Parser, Clone)]
 struct Config {
+    /// Poll current server information
+    #[arg(long)]
     poll_servers: bool,
+
+    /// Poll and update cached mod information
+    #[arg(long)]
     poll_mods: bool,
+
+    /// Update Discord integration
+    #[arg(long)]
     update_discord: bool,
+
+    /// Run web server
+    #[arg(long)]
     www: bool,
 }
 
@@ -25,28 +36,7 @@ struct Config {
 async fn main() -> Result<()> {
     dotenv().ok();
 
-    let matches = clap::Command::new("DRGServerList")
-        .about("Standalone DRG server list")
-        .arg(arg!(-s --"poll-servers" "Poll current server information"))
-        .arg(arg!(-m --"poll-mods"    "Poll and update cached mod information"))
-        .arg(arg!(-d --"update-discord" "Update Discord integration"))
-        .arg(arg!(-w --"www"          "Run web server"))
-        .group(clap::ArgGroup::new("polling")
-               .args(&["poll-mods", "poll-servers", "update-discord"])
-               .conflicts_with("www")
-               .multiple(true))
-        .group(clap::ArgGroup::new("action")
-               .args(&["poll-mods", "poll-servers", "update-discord", "www"])
-               .multiple(true)
-               .required(true))
-        .get_matches();
-
-    let config = Config {
-        poll_servers: matches.is_present("poll-servers"),
-        poll_mods: matches.is_present("poll-mods"),
-        update_discord: matches.is_present("update-discord"),
-        www: matches.is_present("www"),
-    };
+    let config = Config::parse();
 
     let pool = SqlitePool::connect(&env::var("DATABASE_URL")?).await?;
 
