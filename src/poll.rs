@@ -1,6 +1,5 @@
 use anyhow::Result;
 
-use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
 use sqlx::sqlite::SqlitePool;
@@ -134,7 +133,7 @@ pub async fn update_server_list(pool: &SqlitePool, time: i64) -> Result<()> {
         servers.insert(server.id.to_owned(), server);
     }
 
-    for (_, server) in &servers {
+    for server in servers.values() {
         insert_server(pool, time, server).await?;
     }
     Ok(())
@@ -252,7 +251,7 @@ async fn insert_server_mod(
     server: &Server,
     m: &ServerMod,
 ) -> Result<()> {
-    if let Err(..) = &m.name.parse::<i64>() {
+    if m.name.parse::<i64>().is_err() {
         warn!("Mod has non-numeric ID: {m:?}");
         return Ok(());
     }

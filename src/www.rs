@@ -15,7 +15,7 @@ pub async fn run_web_server() -> Result<()> {
     Ok(())
 }
 
-fn app<'a>() -> impl Handler {
+fn app() -> impl Handler {
     (
         Logger::new(),
         trillium::Init::new(|_| async move {

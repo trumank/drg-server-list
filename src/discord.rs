@@ -87,7 +87,7 @@ pub struct SteamPlayer {
     pub personastateflags: Option<i64>,
 }
 
-fn format_mod_field(mods: &Vec<Mod>, category: i32, name: &str) -> Option<WebhookField> {
+fn format_mod_field(mods: &[Mod], category: i32, name: &str) -> Option<WebhookField> {
     let mut value = String::with_capacity(1000);
     let filtered_mods: Vec<&Mod> = mods
         .iter()
@@ -105,9 +105,9 @@ fn format_mod_field(mods: &Vec<Mod>, category: i32, name: &str) -> Option<Webhoo
             break;
         }
         value.push_str(&formatted);
-        value.push_str("\n");
+        value.push('\n');
     }
-    if value != "" {
+    if !value.is_empty() {
         Some(WebhookField {
             name: name.to_string(),
             value,
@@ -118,12 +118,12 @@ fn format_mod_field(mods: &Vec<Mod>, category: i32, name: &str) -> Option<Webhoo
     }
 }
 
-fn format_classes(classes: &String) -> String {
+fn format_classes(classes: &str) -> String {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"\d+;").unwrap();
     }
     let mut vec: Vec<&str> = RE
-        .find_iter(&classes)
+        .find_iter(classes)
         .map(|c| match c.as_str() {
             "0;" => "<:driller:964680901621612584>",
             "1;" => "<:engineer:964680922920255548>",
@@ -302,7 +302,7 @@ pub async fn update_discord(pool: &SqlitePool) -> Result<()> {
                         url: format!("https://steamcommunity.com/profiles/{}", server.host_user_id),
                     },
                     description: format!("steam://joinlobby/548430/{}/{}", server.lobby_id, server.host_user_id),
-                    fields: fields,
+                    fields,
                 }
             ]
         };
