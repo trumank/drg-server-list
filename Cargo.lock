@@ -410,6 +410,7 @@ dependencies = [
  "anyhow",
  "clap",
  "dotenv",
+ "itertools",
  "lazy_static",
  "maud",
  "regex",

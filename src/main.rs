@@ -1,4 +1,3 @@
-#![feature(iter_intersperse)]
 use dotenv::dotenv;
 use sqlx::sqlite::SqlitePool;
 

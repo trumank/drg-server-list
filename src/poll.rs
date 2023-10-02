@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
 use sqlx::sqlite::SqlitePool;
@@ -150,11 +151,7 @@ pub async fn update_mods(pool: &SqlitePool) -> Result<()> {
     let mod_ids = sqlx::query!("SELECT mod_id FROM mod WHERE metadata IS NULL")
         .fetch_all(pool)
         .await?;
-    let id_query: String = mod_ids
-        .into_iter()
-        .map(|res| res.mod_id.to_string())
-        .intersperse(",".into())
-        .collect();
+    let id_query: String = mod_ids.into_iter().map(|res| res.mod_id).join(",");
 
     let url = format!(
         "https://api.mod.io/v1/games/2475/mods?api_key={}&id-in={}",
